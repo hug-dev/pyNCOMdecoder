@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from bitstring import BitArray
+import math
 
 ACC_FACTOR = 1e-4
 ANG_FACTOR = 1e-5
@@ -14,7 +15,8 @@ class NCOM(object):
         self._names = ('Sync', 'Time',
                       'AccX', 'AccY', 'AccZ',
                       'AngX', 'AngY', 'AngZ',
-                      'NavStat', 'Lat', 'Long', 'Alti',
+                      'NavStat', 'Checksum1',
+                      'Lat', 'Long', 'Alti',
                       'Vel_North', 'Vel_East', 'Vel_Down',
                       'Heading', 'Pitch', 'Roll')
         self._navstat = {
@@ -39,7 +41,8 @@ class NCOM(object):
         self._data = b.unpack(('uintle:8, uintle:16,'   # Sync, Time
                                'intle:24, intle:24, intle:24,'  # AccX, AccY, AccZ
                                'intle:24, intle:24, intle:24,'  # AngX, AngY, AngZ
-                               'uintle:8, uintle:64, uintle:64, uintle:32,'  # NavStat, Lat, Long, Alti
+                               'uintle:8, uintle:8,' # NavStat, Checksum1
+                               'floatle:64, floatle:64, floatle:32,'  # Lat, Long, Alti
                                'uintle:24, uintle:24, uintle:24,'  # Vel North, Vel East, Vel Down
                                'uintle:24, uintle:24, uintle:24'  # Heading, Pitch, Roll
                                ))
@@ -51,10 +54,12 @@ class NCOM(object):
         self.d['AngX'] *= ANG_FACTOR
         self.d['AngY'] *= ANG_FACTOR
         self.d['AngZ'] *= ANG_FACTOR
+        self.d['NavStat'] = self._navstat.get(self.d['NavStat'], 'Reserved')
+        self.d['Lat'] = math.degrees(self.d['Lat'])
+        self.d['Long'] = math.degrees(self.d['Long'])
         self.d['Vel_North'] *= VEL_FACTOR
         self.d['Vel_East'] *= VEL_FACTOR
         self.d['Vel_Down'] *= VEL_FACTOR
         self.d['Heading'] *= IMU_FACTOR
         self.d['Pitch'] *= IMU_FACTOR
         self.d['Roll'] *= IMU_FACTOR
-        self.d['NavStat'] = self._navstat.get(self.d['NavStat'], 'Reserved')
